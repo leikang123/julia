@@ -175,8 +175,11 @@ JL_DLLEXPORT jl_value_t *jl_atomic_pointermodify(jl_value_t *p, jl_value_t *f, j
         args[0] = expected;
         jl_gc_safepoint();
     }
-    // args[0] == expected (old); args[1] == y (new)
-    args[0] = jl_f_tuple(NULL, args, 2);
+    // args[0] == expected (old)
+    // args[1] == y (new)
+    jl_datatype_t *rettyp = (jl_datatype_t*)jl_apply_type2(jl_pair_type, ety, ety);
+    JL_GC_PROMISE_ROOTED(rettyp); // (JL_ALWAYS_LEAFTYPE)
+    args[0] = jl_new_struct(rettyp, args[0], args[1]);
     JL_GC_POP();
     return args[0];
 }
@@ -194,19 +197,20 @@ JL_DLLEXPORT jl_value_t *jl_atomic_pointerreplace(jl_value_t *p, jl_value_t *exp
     jl_value_t *ety = jl_tparam0(jl_typeof(p));
     char *pp = (char*)jl_unbox_long(p);
     if (ety == (jl_value_t*)jl_any_type) {
-        jl_value_t **result;
-        JL_GC_PUSHARGS(result, 2);
-        result[0] = expected;
+        jl_value_t *result;
+        JL_GC_PUSH1(&result);
+        result = expected;
         int success;
         while (1) {
-            success = jl_atomic_cmpswap((jl_value_t**)pp, &result[0], x);
-            if (success || !jl_egal(result[0], expected))
+            success = jl_atomic_cmpswap((jl_value_t**)pp, &result, x);
+            if (success || !jl_egal(result, expected))
                 break;
         }
-        result[1] = success ? jl_true : jl_false;
-        result[0] = jl_f_tuple(NULL, result, 2);
+        jl_datatype_t *rettyp = (jl_datatype_t*)jl_apply_type2(jl_pair_type, ety, (jl_value_t*)jl_bool_type);
+        JL_GC_PROMISE_ROOTED(rettyp); // (JL_ALWAYS_LEAFTYPE)
+        result = jl_new_struct(rettyp, result, success ? jl_true : jl_false);
         JL_GC_POP();
-        return result[0];
+        return result;
     }
     else {
         if (!is_valid_intrinsic_elptr(ety))

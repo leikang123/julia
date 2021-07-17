@@ -2984,4 +2984,5 @@ end
     @test_throws ParseError Meta.parse("[ ;]")
     @test_throws ParseError Meta.parse("[; ;]")
     @test_throws ParseError Meta.parse("[;; ;]")
+    @test_throws ParseError Meta.parse("[;\n;]")
 end

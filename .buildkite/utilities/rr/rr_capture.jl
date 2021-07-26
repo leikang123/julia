@@ -6,31 +6,14 @@ if Base.VERSION < v"1.6"
     throw(ErrorException("The `rr_capture.jl` script requires Julia 1.6 or greater"))
 end
 
-if length(ARGS) < 1
-    throw(ErrorException("Usage: rr_capture.jl [command...]"))
+if length(ARGS) < 2
+    throw(ErrorException("Usage: rr_capture.jl <timeout_in_minutes> <command...>"))
 end
 
-const TIMEOUT = 2 * 60 * 60 # timeout in seconds
+const TIMEOUT_IN_MINUTES = parse(Int, popfirst!(ARGS))::Int
 
-# We only use `rr` on the `tester_linux64` builder
-const use_rr_if_builder_is = "tester_linux64"
-
-const run_id = get(ENV, "BUILDKITE_JOB_ID", "unknown")
-const shortcommit = get(ENV, "BUILDKITE_COMMIT", "unknown")
-const builder = get(ENV, "BUILDKITE_STEP_KEY", use_rr_if_builder_is)
-const use_rr = builder == use_rr_if_builder_is
-
-@info "" run_id shortcommit builder use_rr
-@info "" ARGS
-
-# if !use_rr # TODO: uncomment this line
-if true # TODO: delete this line
-    @info "We will not run the tests under rr"
-    p = run(`$ARGS`)
-    exit(p.exitcode)
-end
-
-@info "We will run the tests under rr"
+const run_id      = ENV["BUILDKITE_BUILD_NUMBER"]::String
+const shortcommit = ENV["BUILDKITE_COMMIT"][1:10]::String
 
 const num_cores = min(Sys.CPU_THREADS, 8, parse(Int, get(ENV, "JULIA_TEST_NUM_CORES", "8")) + 1)
 @info "" num_cores
@@ -68,7 +51,7 @@ mktempdir() do dir
 
         # Start asynchronous timer that will kill `rr`
         @async begin
-            sleep(TIMEOUT)
+            sleep(60 * TIMEOUT_IN_MINUTES)
 
             # If we've exceeded the timeout and `rr` is still running, kill it.
             if isopen(proc)

@@ -1,0 +1,47 @@
+
+  - label: "tester2_rr_linux$ARCH"
+    key: tester2_rr_linux$ARCH
+    depends_on: package_linux$ARCH
+    plugins:
+      - JuliaCI/julia#v1:
+          version: 1.6
+      - staticfloat/sandbox#v1:
+          rootfs_url: https://github.com/JuliaCI/rootfs-images/releases/download/$ROOTFS_TAG_PACK/package_linux.${ROOTFS_ARCH}.tar.gz
+          rootfs_treehash: "$ROOTFS_TREE_PACK"
+          uid: 1000
+          gid: 1000
+          workspaces:
+            # Include `/cache/repos` so that our `git` version introspection works.
+            - "/cache/repos:/cache/repos"
+    env:
+      JULIA_SHELL: "/bin/bash"
+    commands: |
+      echo "--- Print the full and short commit hashes"
+      SHORT_COMMIT_LENGTH=10
+      SHORT_COMMIT=`echo $$BUILDKITE_COMMIT | cut -c1-$$SHORT_COMMIT_LENGTH`
+      JULIA_DIRECTORY_NAME="julia-$$SHORT_COMMIT"
+      ARTIFACT_FILE_EXTENSION="tar.gz"
+      ARTIFACT_FILENAME="julia-$$SHORT_COMMIT-linux$ARCH.$$ARTIFACT_FILE_EXTENSION"
+      echo "The full commit is:                     $$BUILDKITE_COMMIT"
+      echo "The short commit is:                    $$SHORT_COMMIT"
+      echo "The artifact filename will be:    $$ARTIFACT_FILENAME"
+      echo "The Julia directory name will be: $$JULIA_DIRECTORY_NAME"
+
+      echo "--- Download build artifacts"
+      rm -rf $$ARTIFACT_FILENAME
+      buildkite-agent artifact download $$ARTIFACT_FILENAME .
+
+      echo "--- Extract build artifacts"
+      rm -rf $$JULIA_DIRECTORY_NAME/
+      tar xzf $$ARTIFACT_FILENAME $$JULIA_DIRECTORY_NAME/
+
+      echo "--- Print Julia version info"
+      $$JULIA_DIRECTORY_NAME/bin/julia -e 'using InteractiveUtils; InteractiveUtils.versioninfo()'
+
+      echo "--- Run the Julia test suite inside rr"
+      unset JULIA_DEPOT_PATH
+      $$JULIA_DIRECTORY_NAME/bin/julia .buildkite/utilities/rr/rr_capture.jl 120 $$JULIA_DIRECTORY_NAME/bin/julia -e 'Base.runtests(["all"]; ncores = Sys.CPU_THREADS)'
+    timeout_in_minutes: 150
+    notify:
+      - github_commit_status:
+          context: "tester2_rr_linux$ARCH"

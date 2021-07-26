@@ -23,7 +23,18 @@ steps:
       buildkite-agent pipeline upload .buildkite/pipelines/main/misc/embedding.yml
       buildkite-agent pipeline upload .buildkite/pipelines/main/misc/llvmpasses.yml
 
-      # Finally, we launch the platform builders (`package_*`) and (`tester_*`) in alphabetical order.
-      buildkite-agent pipeline upload .buildkite/pipelines/main/platforms/linux64.yml
+      # Now, we launch the `linux64` platform builders.
+      rm -rf .buildkite/pipelines/main/platforms/linux_rr.yml
+      cat .buildkite/pipelines/main/platforms/linux.yml >> .buildkite/pipelines/main/platforms/linux_rr.yml
+      cat .buildkite/pipelines/main/platforms/rr.yml    >> .buildkite/pipelines/main/platforms/linux_rr.yml
+      ARCH=64      ROOTFS_ARCH=x86_64      ROOTFS_TAG_PACK=v3.2 ROOTFS_TREE_PACK=474bf61a926b2d7fcf202284d59d4b11a04601d7 ROOTFS_TAG_TEST=v3.2 ROOTFS_TREE_TEST=b1b1fce0b76b2dbe41222093f2f9f3f8e226018d buildkite-agent pipeline upload .buildkite/pipelines/main/platforms/linux_rr.yml
+
+      # Finally, we launch all of the remaining the platform builders.
+      # ARCH=aarch64 ROOTFS_ARCH=aarch64     ROOTFS_TAG_PACK=v3.2 ROOTFS_TREE_PACK=0566841e29f0f9880541c26a6595fd5ce0beb5ff ROOTFS_TAG_TEST=v3.2 ROOTFS_TREE_TEST=d38f34db72317ffa798b18b0c8e193795bb254db buildkite-agent pipeline upload .buildkite/pipelines/main/platforms/linux.yml
+      # ARCH=armv7l  ROOTFS_ARCH=armv7l      ROOTFS_TAG_PACK=v3.2 ROOTFS_TREE_PACK=fb359370b052a47ce5c84cc6b4a7a03ed7053b25 ROOTFS_TAG_TEST=v3.2 ROOTFS_TREE_TEST=11c66f1c3a094e031fae6a9de0fa7986459466b6 buildkite-agent pipeline upload .buildkite/pipelines/main/platforms/linux.yml
+      ARCH=32      ROOTFS_ARCH=i686        ROOTFS_TAG_PACK=v3.2 ROOTFS_TREE_PACK=209c4db679a515befd7fb50ecc6bfbecf7ec3d32 ROOTFS_TAG_TEST=v3.2 ROOTFS_TREE_TEST=b63e7f1002f093dc51390cd8f4a6368ea929560f buildkite-agent pipeline upload .buildkite/pipelines/main/platforms/linux.yml
+      # ARCH=ppc64le ROOTFS_ARCH=powerpc64le ROOTFS_TAG_PACK=v3.2 ROOTFS_TREE_PACK=c03a0158b19d48ac84b426834fce0d3584cdd0c7 ROOTFS_TAG_TEST=v3.2 ROOTFS_TREE_TEST=0b23a48bb5ed4b3226ebceea18375a2b09caf34d buildkite-agent pipeline upload .buildkite/pipelines/main/platforms/linux.yml
+
+
     agents:
       queue: julia

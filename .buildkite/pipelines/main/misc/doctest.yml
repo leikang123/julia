@@ -19,6 +19,10 @@ steps:
             # Include `/cache/repos` so that our `git` version introspection works.
             - "/cache/repos:/cache/repos"
     commands: |
+      echo "--- If PR build, make sure that we are up-to-date with the base (target) branch"
+      [[ "$$BUILDKITE_PULL_REQUEST" != "false" ]] && git fetch origin
+      [[ "$$BUILDKITE_PULL_REQUEST" != "false" ]] && git merge --no-edit origin/$$BUILDKITE_PULL_REQUEST_BASE_BRANCH
+
       echo "--- Build Julia from source"
       make -j 6
 

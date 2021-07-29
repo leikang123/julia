@@ -16,6 +16,11 @@ steps:
           workspaces:
             - "/cache/repos:/cache/repos"
     commands: |
+      echo "--- If PR build, make sure that we are up-to-date with the base (target) branch"
+      [[ "$$BUILDKITE_PULL_REQUEST" != "false" ]] && git fetch origin
+      [[ "$$BUILDKITE_PULL_REQUEST" != "false" ]] && git merge --no-edit origin/$$BUILDKITE_PULL_REQUEST_BASE_BRANCH
+
+      echo "--- Check whitespace"
       make -j$${JULIA_NUM_CORES} check-whitespace
     timeout_in_minutes: 10
     notify:

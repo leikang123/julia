@@ -19,6 +19,10 @@ steps:
             # Include `/cache/repos` so that our `git` version introspection works.
             - "/cache/repos:/cache/repos"
     commands: |
+      echo "--- If PR build, make sure that we are up-to-date with the base (target) branch"
+      [[ "$$BUILDKITE_PULL_REQUEST" != "false" ]] && git fetch origin
+      [[ "$$BUILDKITE_PULL_REQUEST" != "false" ]] && git merge --no-edit origin/$$BUILDKITE_PULL_REQUEST_BASE_BRANCH
+
       echo "--- Print the short and long commit hashes"
       SHORT_COMMIT_LENGTH=10
       SHORT_COMMIT=`echo $$BUILDKITE_COMMIT | cut -c1-$$SHORT_COMMIT_LENGTH`
@@ -70,6 +74,10 @@ steps:
   #   env:
   #     JULIA_SHELL: "/bin/bash"
   #   commands: |
+  #     echo "--- If PR build, make sure that we are up-to-date with the base (target) branch"
+  #     [[ "$$BUILDKITE_PULL_REQUEST" != "false" ]] && git fetch origin
+  #     [[ "$$BUILDKITE_PULL_REQUEST" != "false" ]] && git merge --no-edit origin/$$BUILDKITE_PULL_REQUEST_BASE_BRANCH
+  #
   #     echo "--- Download build artifacts"
   #     rm -rf julia-linux64.tar.gz
   #     buildkite-agent artifact download julia-linux64.tar.gz .

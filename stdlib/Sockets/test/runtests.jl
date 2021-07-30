@@ -199,6 +199,13 @@ end
     @test getnameinfo(ip"192.0.2.1") == "192.0.2.1"
     @test getnameinfo(ip"198.51.100.1") == "198.51.100.1"
     @test getnameinfo(ip"203.0.113.1") == "203.0.113.1"
+    # NOTE: Default Ubuntu installations contain a faulty DNS configuration
+    # that returns `EAI_AGAIN` instead of `EAI_NONAME`.  To fix this, try
+    # installing `libnss-resolve`, which installs the `systemd-resolve`
+    # backend for NSS, which should fix it.
+    if Sys.islinux() && getnameinfo(ip"0.1.1.1") != "0.1.1.1"
+        @error("getnameinfo(0.1.1.1) failed!  If your DNS setup seems to be working, Try installing libnss-resolve!")
+    end
     @test getnameinfo(ip"0.1.1.1") == "0.1.1.1"
     @test getnameinfo(ip"::ffff:0.1.1.1") == "::ffff:0.1.1.1"
     @test getnameinfo(ip"::ffff:192.0.2.1") == "::ffff:192.0.2.1"
